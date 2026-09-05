@@ -77,7 +77,7 @@ export function App() {
         </div>
         <div className="court-grid">
           <section className="courtroom">
-            <div className="scene-stage"><div className="stage-grid" /><div className="scene-sign">SUPREME<br /><b>AGENT COURT</b></div><Avatar kind="judge" label="JUDGE" text="J" /><Avatar kind="defense" label="DEFENSE" text="YOU" /><Avatar kind="witness" label="WITNESS" text="?" /><div className="bench" /></div>
+            <div className="scene-stage"><div className="stage-grid" /><div className="scene-sign">SUPREME<br /><b>AGENT COURT</b></div><Avatar kind="judge" label="JUDGE" text="J" image="/assets/judge.png" /><Avatar kind="defense" label="DEFENSE" text="YOU" image="/assets/defense.png" /><Avatar kind="prosecutor" label="PROSECUTOR" text="!" image="/assets/prosecutor.png" /><div className="bench" /></div>
             <div className="dialogue-box">
               <Turn turn={turn} onAdvance={advance} onChoose={choose} onFinish={() => setScreen('verdict')} />
               {feedback ? <p className="feedback" role="status">{feedback}</p> : null}
@@ -100,8 +100,8 @@ function Masthead({ onHome, status, live = false }: { onHome: () => void; status
   return <header className="masthead"><button className="wordmark" onClick={onHome}><span className="brand-mark">AG</span> AGENTGIT / TRAINING COURT</button><span className="masthead-status">{live ? <span className="status-dot status-dot--live" /> : null}{status}</span></header>
 }
 
-function Avatar({ kind, label, text }: { kind: string; label: string; text: string }) {
-  return <div className={`avatar avatar--${kind}`}><span>{text}</span><small>{label}</small></div>
+function Avatar({ kind, label, text, image }: { kind: string; label: string; text: string; image: string }) {
+  return <div className={`avatar avatar--${kind}`}><span aria-label={text}><img src={image} alt="" /></span><small>{label}</small></div>
 }
 
 function Title({ onStart }: { onStart: () => void }) {

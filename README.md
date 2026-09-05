@@ -30,3 +30,9 @@ npm run preview
 - [gitveg/paper2gal](https://github.com/gitveg/paper2gal)：Streamlit + PDF 解析 + LLM 剧本引擎，支持 UI 与 headless 模式。
 
 本样例为了可离线试玩，使用 React + TypeScript + Vite，证物与剧情写成确定性的本地数据，不连接模型。
+
+## 逆转裁判素材参考
+
+这个样例仓库已经初始化为独立 Git 仓库，并将用户指定的参考项目克隆到了 `reference/NLP-game-project-publicver/`（该目录被 `.gitignore` 忽略，不会把 644 MB 的参考仓库历史提交进本样例）。庭审背景与三张角色头像复制到 `public/assets/` 后，用在庭审场景的背景和角色节点上；参考项目的音乐、视频与 Python 运行时代码没有被引入。
+
+参考项目：[fzw-yinianzhijian/NLP-game-project-publicver](https://github.com/fzw-yinianzhijian/NLP-game-project-publicver)。其仓库声明为 MIT，但其中的角色、游戏画面与 Capcom 音乐仍可能包含第三方权利，详细说明见 [ATTRIBUTION.md](./ATTRIBUTION.md)。

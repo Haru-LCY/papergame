@@ -1,4 +1,5 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { generateStory, importArxiv, type GeneratedStory, type ImportedPaper } from './api'
 import { PAPERS, type PaperCase, type PaperId } from './papers'
 
 type Screen = 'title' | 'briefing' | 'trial' | 'verdict'
@@ -30,19 +31,31 @@ function paperEvidence(paper: PaperCase): Evidence {
   return { id: 'paper', number: '00', label: paper.label, subtitle: '论文卷宗', glyph: 'P', title: paper.title, description: paper.summary, command: paper.keyFact }
 }
 
+function makeGeneratedPaper(imported: ImportedPaper, story: GeneratedStory): PaperCase {
+  return {
+    id: 'custom', label: 'ARXIV · AI', title: imported.title, subtitle: imported.categories.slice(0, 2).join(' / ') || 'AI 生成案件',
+    year: imported.year, authors: imported.authors.slice(0, 4).join(', '), caseTitle: story.caseTitle, tagline: story.tagline,
+    summary: story.summary, keyFact: story.keyFact, question: story.question, options: story.options,
+    correctOption: story.correctOption, correctFeedback: story.correctFeedback, sourceUrl: imported.sourceUrl,
+    sourceLabel: `arXiv · ${imported.id}`, sourceMode: 'arxiv-deepseek', keyIdeas: story.keyIdeas, scenes: story.scenes,
+  }
+}
+
 export function App() {
   const [screen, setScreen] = useState<Screen>('title')
   const [paperId, setPaperId] = useState<PaperId>('attention')
+  const [customPaper, setCustomPaper] = useState<PaperCase | null>(null)
   const [turn, setTurn] = useState(0)
   const [score, setScore] = useState(0)
   const [activeConcept, setActiveConcept] = useState<ConceptId>('repo')
   const [feedback, setFeedback] = useState('')
   const [wrongAttempts, setWrongAttempts] = useState(0)
-  const activePaper = PAPERS[paperId]
+  const activePaper = customPaper ?? (paperId === 'custom' ? PAPERS.attention : PAPERS[paperId])
   const allEvidence = useMemo(() => [paperEvidence(activePaper), ...CORE_EVIDENCE], [activePaper])
   const activeEvidence = useMemo(() => allEvidence.find((item) => item.id === activeConcept) ?? allEvidence[0], [activeConcept, allEvidence])
 
-  const reset = () => { setScreen('title'); setPaperId('attention'); setTurn(0); setScore(0); setActiveConcept('paper'); setFeedback(''); setWrongAttempts(0) }
+  const reset = () => { setScreen('title'); setPaperId('attention'); setCustomPaper(null); setTurn(0); setScore(0); setActiveConcept('paper'); setFeedback(''); setWrongAttempts(0) }
+  const selectPaper = (id: PaperId) => { setCustomPaper(null); setPaperId(id); setFeedback('') }
   const advance = (concept: ConceptId, message: string, nextConcept: ConceptId = concept) => {
     setScore((value) => value + 1)
     setActiveConcept(concept)
@@ -79,7 +92,7 @@ export function App() {
   }
 
   if (screen === 'title') return <Title onStart={() => setScreen('briefing')} />
-  if (screen === 'briefing') return <Briefing paper={activePaper} paperId={paperId} onSelectPaper={setPaperId} onBack={reset} onEnter={() => { setScreen('trial'); setTurn(0) }} />
+  if (screen === 'briefing') return <Briefing paper={activePaper} paperId={paperId} customPaper={customPaper} onSelectPaper={selectPaper} onImportPaper={(paper) => { setCustomPaper(paper); setPaperId('custom'); setFeedback('') }} onBack={reset} onEnter={() => { setScreen('trial'); setTurn(0) }} />
   if (screen === 'verdict') return <Verdict score={score} paper={activePaper} onRestart={reset} />
 
   const chapter = CHAPTERS[Math.min(turn, CHAPTERS.length - 1)]
@@ -121,24 +134,45 @@ function Avatar({ kind, label, text, image }: { kind: string; label: string; tex
 }
 
 function Title({ onStart }: { onStart: () => void }) {
-  return <div className="game game--title"><Masthead onHome={() => undefined} status="CASE 001 / PLAYABLE" /><main className="title-layout"><section className="title-copy"><p className="overline">AN INTERACTIVE CASE FILE · 01</p><h1>Paper2<br /><em>逆转裁判</em></h1><p className="title-lede">把一篇真实论文变成可追问的证据链。<br />在一场 5 分钟的法庭推理里，学会 AgentGit。</p><div className="title-meta"><span><b>案件</b> 真实论文</span><span><b>形式</b> 互动教程</span><span><b>难度</b> 新手友好</span></div><button className="button button--primary button--large" onClick={onStart}>选择论文案件 <span>↗</span></button><p className="title-note">不需要账号 · 不上传文件 · 进度只存在于本页</p></section><TitleArt /></main><div className="title-footer"><span>PLAYABLE EXPLAINER</span><span>SCROLL / CLICK / LEARN</span><span>BUILT FOR AGENTGIT</span></div></div>
+  return <div className="game game--title"><Masthead onHome={() => undefined} status="CASE 001 / PLAYABLE" /><main className="title-layout"><section className="title-copy"><p className="overline">AN INTERACTIVE CASE FILE · 01</p><h1>Paper2<br /><em>逆转裁判</em></h1><p className="title-lede">把一篇真实论文变成可追问的证据链。<br />在一场 5 分钟的法庭推理里，学会 AgentGit。</p><div className="title-meta"><span><b>案件</b> 真实论文</span><span><b>形式</b> 互动教程</span><span><b>难度</b> 新手友好</span></div><button className="button button--primary button--large" onClick={onStart}>选择论文案件 <span>↗</span></button><p className="title-note">不需要账号 · 不上传本地文件 · 进度只存在于本页</p></section><TitleArt /></main><div className="title-footer"><span>PLAYABLE EXPLAINER</span><span>SCROLL / CLICK / LEARN</span><span>BUILT FOR AGENTGIT</span></div></div>
 }
 
 function TitleArt() {
   return <section className="title-art" aria-label="案件卷宗预览"><div className="paper-sheet paper-sheet--back" /><div className="paper-sheet paper-sheet--front"><div className="sheet-stamp">EVIDENCE</div><p className="sheet-kicker">CASE FILE / 001</p><p className="sheet-title">消失的<br /><strong>上下文</strong></p><div className="sheet-rule" /><div className="sheet-lines"><i /><i /><i /><i /></div><p className="sheet-footer">AGENTGIT · 2026</p></div><div className="orbit orbit--one" /><div className="orbit orbit--two" /><span className="art-label art-label--top">THE CONTEXT IS<br /><b>THE EVIDENCE</b></span><span className="art-label art-label--bottom">REPO / VIEW / COMMIT<br /><b>BRANCH / MERGE</b></span></section>
 }
 
-function Briefing({ paper, paperId, onSelectPaper, onBack, onEnter }: { paper: PaperCase; paperId: PaperId; onSelectPaper: (id: PaperId) => void; onBack: () => void; onEnter: () => void }) {
-  return <div className="game game--briefing"><Masthead onHome={onBack} status="BRIEFING / CASE 001" /><main className="briefing-layout"><section className="briefing-intro"><p className="overline">CASE BRIEFING · SELECT A REAL PAPER</p><h1>{paper.caseTitle}<br /><em>案件</em></h1><p className="briefing-lede">{paper.tagline} 你将作为辩护人，把论文主张和 AgentGit 的证据链一起带进法庭。</p><div className="paper-picker" aria-label="选择论文案件">{Object.values(PAPERS).map((item) => <button key={item.id} className={item.id === paperId ? 'paper-picker-card paper-picker-card--active' : 'paper-picker-card'} onClick={() => onSelectPaper(item.id)}><span className="paper-picker-code">{item.label}</span><strong>{item.title}</strong><small>{item.subtitle} · {item.year}</small></button>)}</div><a className="paper-source-link" href={paper.sourceUrl} target="_blank" rel="noreferrer">阅读论文原文 · {paper.sourceLabel} ↗</a><button className="button button--primary" onClick={onEnter}>进入法庭 <span>→</span></button></section><section className="dossier"><div className="dossier-head"><span>论文卷宗</span><span>{paper.year} / {paper.authors}</span></div><div className="paper-summary"><p className="paper-summary-title">{paper.title}</p><p>{paper.summary}</p><strong>{paper.keyFact}</strong></div><div className="dossier-head dossier-head--evidence"><span>协作证物清单</span><span>5 ITEMS</span></div><div className="dossier-list">{CORE_EVIDENCE.map((item) => <div className="dossier-item" key={item.id}><span className="dossier-number">{item.number}</span><span className="dossier-icon">{item.glyph}</span><span className="dossier-text"><b>{item.label}</b><small>{item.subtitle}</small></span><span className="dossier-arrow">↗</span></div>)}</div><div className="dossier-note"><span>✦</span><p>先读论文摘要，再在庭审中用证物说明“为什么这条结论可信、如何继续协作”。</p></div></section></main><div className="ticker"><span>DEFENSE ATTORNEY / YOU</span><span>THE COURT IS NOW IN SESSION</span></div></div>
+function Briefing({ paper, paperId, customPaper, onSelectPaper, onImportPaper, onBack, onEnter }: { paper: PaperCase; paperId: PaperId; customPaper: PaperCase | null; onSelectPaper: (id: PaperId) => void; onImportPaper: (paper: PaperCase) => void; onBack: () => void; onEnter: () => void }) {
+  const [url, setUrl] = useState('')
+  const [importState, setImportState] = useState<'idle' | 'scanning' | 'generating'>('idle')
+  const [importError, setImportError] = useState('')
+  const submitImport = async () => {
+    if (!url.trim() || importState !== 'idle') return
+    setImportError('')
+    try {
+      setImportState('scanning')
+      const { paper: imported } = await importArxiv(url.trim())
+      setImportState('generating')
+      const { story } = await generateStory(imported)
+      onImportPaper(makeGeneratedPaper(imported, story))
+      setImportState('idle')
+      setUrl('')
+    } catch (error) {
+      setImportState('idle')
+      setImportError(error instanceof Error ? error.message : '论文导入失败，请稍后重试。')
+    }
+  }
+  const choices = Object.values(PAPERS)
+  return <div className="game game--briefing"><Masthead onHome={onBack} status="BRIEFING / CASE 001" /><main className="briefing-layout"><section className="briefing-intro"><p className="overline">CASE BRIEFING · SELECT A REAL PAPER</p><h1>{paper.caseTitle}<br /><em>案件</em></h1><p className="briefing-lede">{paper.tagline} 你将作为辩护人，把论文主张和 AgentGit 的证据链一起带进法庭。</p><div className="paper-picker" aria-label="选择论文案件">{choices.map((item) => <button key={item.id} className={item.id === paperId ? 'paper-picker-card paper-picker-card--active' : 'paper-picker-card'} onClick={() => onSelectPaper(item.id)}><span className="paper-picker-code">{item.label}</span><strong>{item.title}</strong><small>{item.subtitle} · {item.year}</small></button>)}{customPaper ? <button className={paperId === 'custom' ? 'paper-picker-card paper-picker-card--active paper-picker-card--generated' : 'paper-picker-card paper-picker-card--generated'} onClick={() => onSelectPaper('custom')}><span className="paper-picker-code">ARXIV · AI</span><strong>{customPaper.title}</strong><small>刚刚生成 · DeepSeek</small></button> : null}</div><div className="import-card"><div className="import-card-head"><span>NEW CASE / ARXIV</span><b>SERVER-SIDE SCAN</b></div><p>粘贴 arXiv 链接。服务端会读取公开摘要与 TeX 源码，再生成一套可追问的案件。</p><div className="import-form"><input className="import-input" type="url" value={url} onChange={(event) => setUrl(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void submitImport() }} placeholder="https://arxiv.org/abs/1706.03762" aria-label="arXiv 论文链接" /><button className="button button--primary import-button" onClick={() => void submitImport()} disabled={importState !== 'idle'}>{importState === 'scanning' ? '扫描 TeX…' : importState === 'generating' ? '生成剧情…' : '导入论文'} <span>↗</span></button></div>{importState !== 'idle' ? <p className="import-status" role="status">{importState === 'scanning' ? '解析 arXiv 元数据并扫描 TeX 源码…' : 'DeepSeek 正在把方法、实验和结论编成庭审证词…'}</p> : null}{importError ? <p className="import-error" role="alert">{importError}</p> : null}</div><a className="paper-source-link" href={paper.sourceUrl} target="_blank" rel="noreferrer">阅读论文原文 · {paper.sourceLabel} ↗</a><button className="button button--primary" onClick={onEnter}>进入法庭 <span>→</span></button></section><section className="dossier"><div className="dossier-head"><span>论文卷宗 {paper.sourceMode === 'arxiv-deepseek' ? <em className="paper-badge">AI GENERATED</em> : null}</span><span>{paper.year} / {paper.authors}</span></div><div className="paper-summary"><p className="paper-summary-title">{paper.title}</p><p>{paper.summary}</p><strong>{paper.keyFact}</strong>{paper.keyIdeas?.length ? <div className="key-ideas">{paper.keyIdeas.map((idea) => <span key={idea}>✦ {idea}</span>)}</div> : null}</div><div className="dossier-head dossier-head--evidence"><span>协作证物清单</span><span>5 ITEMS</span></div><div className="dossier-list">{CORE_EVIDENCE.map((item) => <div className="dossier-item" key={item.id}><span className="dossier-number">{item.number}</span><span className="dossier-icon">{item.glyph}</span><span className="dossier-text"><b>{item.label}</b><small>{item.subtitle}</small></span><span className="dossier-arrow">↗</span></div>)}</div><div className="dossier-note"><span>✦</span><p>先读论文摘要，再在庭审中用证物说明“为什么这条结论可信、如何继续协作”。</p></div></section></main><div className="ticker"><span>DEFENSE ATTORNEY / YOU</span><span>THE COURT IS NOW IN SESSION</span></div></div>
 }
 
 function Turn({ turn, paper, onAdvance, onChoose, onChoosePaper, onFinish }: { turn: number; paper: PaperCase; onAdvance: (concept: ConceptId, message: string, nextConcept?: ConceptId) => void; onChoose: (answer: string, concept: 'branch' | 'merge', message: string) => void; onChoosePaper: (answer: string) => void; onFinish: () => void }) {
-  if (turn === 0) return <><SceneText speaker={`书记官 · ${paper.label}`}>“本庭受理论文案件 <strong>{paper.title}</strong>。它的关键主张是：{paper.tagline} 辩护人，请先把论文卷宗放进 AgentGit 的案件记录。”</SceneText><div className="action-row"><button className="button button--primary" onClick={() => onAdvance('repo', '卷宗已打开：先从 repo 认识 AgentGit。', 'paper')}>打开案件卷宗 <span>→</span></button><span className="hint">提示：先确认“论文与协作记录”保存在哪里</span></div></>
-  if (turn === 1) return <><SceneText speaker={`证人 · 论文摘要`}>“我听说这篇论文的核心只是一个漂亮的标题。至于它到底提出了什么，读者各自理解就好。”<Question>{paper.question}</Question></SceneText><div className="choice-grid"><Choice letter="A" onClick={() => onChoosePaper(paper.options[0])}>{paper.options[0]}</Choice><Choice letter="B" onClick={() => onChoosePaper(paper.options[1])}>{paper.options[1]}</Choice><Choice letter="C" onClick={() => onChoosePaper(paper.options[2])}>{paper.options[2]}</Choice></div></>
-  if (turn === 2) return <><SceneText speaker="法官 · 主审">“证人说你每次保存都会覆盖旧记录。请提交一件证物，证明历史可以被一段一段地封存。”<Question>点击右侧证物栏中的 COMMIT，完成指证。</Question></SceneText><div className="evidence-prompt"><span>C</span>目标：证明“带意图的快照”</div></>
-  if (turn === 3) return <><SceneText speaker="助手 · 小纸条">“主线太拥挤了。我们要调查另一种解释，但不想打断 main。下一步怎么做？”<Question>选择正确的调查姿势：</Question></SceneText><div className="choice-grid"><Choice letter="A" onClick={() => onChoose('主线', 'branch', '')}>直接把实验写进 main</Choice><Choice letter="B" onClick={() => onChoose('支线', 'branch', '正确：从 main 分出调查支线，协作就能并行。')}>从 main 分出一条调查支线</Choice><Choice letter="C" onClick={() => onChoose('删除', 'branch', '')}>删除 main，重新开始</Choice></div></>
-  if (turn === 4) return <><SceneText speaker="陪审团 · 多个 VIEW">“调查已经有结果，但它还不是主案的一部分。请给出最后的合议动作。”<Question>把被审查过的结论带回目标分支：</Question></SceneText><div className="choice-grid choice-grid--two"><Choice letter="A" onClick={() => onChoose('合并', 'merge', '合议完成：merge 让经过审查的结论回到主线。')}>merge 调查支线回 main</Choice><Choice letter="B" onClick={() => onChoose('删除', 'merge', '')}>删除调查支线</Choice></div></>
-  return <><SceneText speaker="书记官 · VIEW">“所有关键事实都已写入卷宗：repo 保存上下文，commit 封存进度，branch 允许探索，merge 带回共识。”<Question>案件即将宣判。你已经掌握了 AgentGit 的最小工作流。</Question></SceneText><div className="action-row"><button className="button button--primary" onClick={onFinish}>宣读判决 <span>→</span></button><span className="hint">正确答案已收录进你的证据链</span></div></>
+  const scenes = paper.scenes ?? {}
+  if (turn === 0) return <><SceneText speaker={`书记官 · ${paper.label}`}>{scenes.opening || <>“本庭受理论文案件 <strong>{paper.title}</strong>。它的关键主张是：{paper.tagline} 辩护人，请先把论文卷宗放进 AgentGit 的案件记录。”</>}</SceneText><div className="action-row"><button className="button button--primary" onClick={() => onAdvance('repo', '卷宗已打开：先从 repo 认识 AgentGit。', 'paper')}>打开案件卷宗 <span>→</span></button><span className="hint">提示：先确认“论文与协作记录”保存在哪里</span></div></>
+  if (turn === 1) return <><SceneText speaker={`证人 · 论文摘要`}>{scenes.testimony || '“我听说这篇论文的核心只是一个漂亮的标题。至于它到底提出了什么，读者各自理解就好。”'}<Question>{paper.question}</Question></SceneText><div className="choice-grid"><Choice letter="A" onClick={() => onChoosePaper(paper.options[0])}>{paper.options[0]}</Choice><Choice letter="B" onClick={() => onChoosePaper(paper.options[1])}>{paper.options[1]}</Choice><Choice letter="C" onClick={() => onChoosePaper(paper.options[2])}>{paper.options[2]}</Choice></div></>
+  if (turn === 2) return <><SceneText speaker="法官 · 主审">{scenes.commit || '“证人说你每次保存都会覆盖旧记录。请提交一件证物，证明历史可以被一段一段地封存。”'}<Question>点击右侧证物栏中的 COMMIT，完成指证。</Question></SceneText><div className="evidence-prompt"><span>C</span>目标：证明“带意图的快照”</div></>
+  if (turn === 3) return <><SceneText speaker="助手 · 小纸条">{scenes.branch || '“主线太拥挤了。我们要调查另一种解释，但不想打断 main。下一步怎么做？”'}<Question>选择正确的调查姿势：</Question></SceneText><div className="choice-grid"><Choice letter="A" onClick={() => onChoose('主线', 'branch', '')}>直接把实验写进 main</Choice><Choice letter="B" onClick={() => onChoose('支线', 'branch', '正确：从 main 分出调查支线，协作就能并行。')}>从 main 分出一条调查支线</Choice><Choice letter="C" onClick={() => onChoose('删除', 'branch', '')}>删除 main，重新开始</Choice></div></>
+  if (turn === 4) return <><SceneText speaker="陪审团 · 多个 VIEW">{scenes.merge || '“调查已经有结果，但它还不是主案的一部分。请给出最后的合议动作。”'}<Question>把被审查过的结论带回目标分支：</Question></SceneText><div className="choice-grid choice-grid--two"><Choice letter="A" onClick={() => onChoose('合并', 'merge', '合议完成：merge 让经过审查的结论回到主线。')}>merge 调查支线回 main</Choice><Choice letter="B" onClick={() => onChoose('删除', 'merge', '')}>删除调查支线</Choice></div></>
+  return <><SceneText speaker="书记官 · VIEW">{scenes.verdict || '“所有关键事实都已写入卷宗：repo 保存上下文，commit 封存进度，branch 允许探索，merge 带回共识。”'}<Question>案件即将宣判。你已经掌握了 AgentGit 的最小工作流。</Question></SceneText><div className="action-row"><button className="button button--primary" onClick={onFinish}>宣读判决 <span>→</span></button><span className="hint">正确答案已收录进你的证据链</span></div></>
 }
 
 function SceneText({ speaker, children }: { speaker: string; children: ReactNode }) { return <div className="scene-copy"><p className="speaker">{speaker}</p><p className="dialogue">{children}</p></div> }

@@ -1,4 +1,13 @@
-export type PaperId = 'attention' | 'streaming'
+export type PaperId = 'attention' | 'streaming' | 'custom'
+
+export type PaperScenes = {
+  opening?: string
+  testimony?: string
+  commit?: string
+  branch?: string
+  merge?: string
+  verdict?: string
+}
 
 export type PaperCase = {
   id: PaperId
@@ -17,9 +26,12 @@ export type PaperCase = {
   correctFeedback: string
   sourceUrl: string
   sourceLabel: string
+  sourceMode?: 'curated' | 'arxiv-deepseek'
+  keyIdeas?: string[]
+  scenes?: PaperScenes
 }
 
-export const PAPERS: Record<PaperId, PaperCase> = {
+export const PAPERS: Record<Exclude<PaperId, 'custom'>, PaperCase> = {
   attention: {
     id: 'attention',
     label: 'ATTENTION',

@@ -2,3 +2,7 @@ node_modules
 dist
 .DS_Store
 reference/
+key.md
+.env
+.env.*
+!.env.example

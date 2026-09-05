@@ -15,10 +15,27 @@ npm run dev
 
 ```bash
 npm run build
-npm run preview
+npm run start
 ```
 
-游戏完全是前端静态逻辑，不需要账号、后端或 API key；进度只保存在当前页面内。
+开发时 `npm run dev` 会同时挂载论文 API；生产构建后用 `npm run start` 启动同一个 Node 服务。预览静态页面仍可以使用 `npm run preview`，但要使用 arXiv 导入功能请使用前两个命令之一。
+
+## 从 arXiv 生成新案件
+
+选案页的 `NEW CASE / ARXIV` 输入框接受 `https://arxiv.org/abs/...`、`/pdf/...` 或 `export.arxiv.org` 链接。服务端会：
+
+1. 校验域名与论文编号，只访问 arXiv 官方地址；
+2. 读取公开元数据和 e-print TeX 源码（源码不可用时退回摘要）；
+3. 使用 DeepSeek JSON Output 生成摘要、关键线索、三项选择题、正确答案和五段庭审对白；
+4. 把生成的案件临时放进当前页面，和两篇内置案件一样可以完整游玩。
+
+DeepSeek key 只在服务端读取。开发机可以把单独的 `key.md` 放在项目外（本项目默认检查 `../key.md`，也支持 `DEEPSEEK_API_KEY` / `DEEPSEEK_KEY_FILE`），或复制 `.env.example` 设置环境变量；密钥不会进入浏览器 bundle、接口响应或 Git。生产环境建议使用进程环境变量：
+
+```bash
+DEEPSEEK_API_KEY=sk-... npm run start
+```
+
+论文正文会被截断到适合模型上下文的长度，生成结果经过服务端校验后才交给前端；任何错误都会保留内置案件，不会影响离线试玩。
 
 ## 灵感与技术考察
 
@@ -29,7 +46,7 @@ npm run preview
 - [Nova42x/paper2galgame](https://github.com/Nova42x/paper2galgame)：React 19 + TypeScript + Vite + Gemini SDK，组件化实现视觉小说对话、文件上传和 AI 生成。
 - [gitveg/paper2gal](https://github.com/gitveg/paper2gal)：Streamlit + PDF 解析 + LLM 剧本引擎，支持 UI 与 headless 模式。
 
-本样例为了可离线试玩，使用 React + TypeScript + Vite，证物与剧情写成确定性的本地数据，不连接模型。
+本样例使用 React + TypeScript + Vite，内置案件是确定性的本地数据，同时通过一个 Node API 路由连接 arXiv 和 DeepSeek 生成新案件。API 代码位于 [server/paper-api.mjs](./server/paper-api.mjs)，前端请求封装位于 [src/api.ts](./src/api.ts)。
 
 ## 真实论文案件
 

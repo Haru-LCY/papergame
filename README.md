@@ -29,7 +29,7 @@ npm run start
 3. 使用 DeepSeek JSON Output 生成摘要、关键线索、三项选择题、正确答案和五段庭审对白；
 4. 把生成的案件临时放进当前页面，和两篇内置案件一样可以完整游玩。
 
-DeepSeek key 只在服务端读取。开发机可以把单独的 `key.md` 放在项目外（本项目默认检查 `../key.md`，也支持 `DEEPSEEK_API_KEY` / `DEEPSEEK_KEY_FILE`），或复制 `.env.example` 设置环境变量；密钥不会进入浏览器 bundle、接口响应或 Git。生产环境建议使用进程环境变量：
+进入游戏前必须在标题页配置玩家自己的 DeepSeek key。它只保存在当前浏览器的 localStorage，并在生成案件时通过本地服务端请求发送给 DeepSeek；不会进入前端 bundle、接口响应或 Git。开发机仍可以把单独的 `key.md` 放在项目外（本项目默认检查 `../key.md`，作为服务端回退），也支持 `DEEPSEEK_API_KEY` / `DEEPSEEK_KEY_FILE`：
 
 ```bash
 DEEPSEEK_API_KEY=sk-... npm run start
@@ -57,6 +57,8 @@ DEEPSEEK_API_KEY=sk-... npm run start
 
 两条案件都共享同一条 AgentGit 教学链：先把论文和协作上下文放入 `repo`，再用 `commit` 封存证据、用 `branch` 并行调查，最后用 `merge` 把经过审查的结论带回主线。论文材料位于 [src/papers.ts](./src/papers.ts)，因此后续可以继续添加其它论文而不改动庭审组件。
 
+右侧的“论文证物”栏只包含论文摘要、方法和实验结果（`00`、`P1`、`P2`、`P3`）；`repo` / `VIEW` / `commit` / `branch` / `merge` 现在是独立的 AgentGit 教学流程栏，不会伪装成论文证物。
+
 ### 交叉询问与精确证物
 
 论文案件现在有一条更接近逆转裁判的交叉询问规则：玩家先按 `OBJECTION!` 指出证言矛盾，再从 `P1 / P2 / P3` 中提交一张具体论文证物，最后才能选择答案；只背概念、不提交数据会被异议打回。内置案件的证物直接引用论文中的可核对事实，例如 Transformer 的 `28.4 BLEU`、`41.8 BLEU / 3.5 days`，以及 StreamingLLM 的 `4M tokens`、`22.2× speedup`。这些数值对应 [Attention Is All You Need](https://arxiv.org/abs/1706.03762) 和 [Efficient Streaming Language Models with Attention Sinks](https://arxiv.org/abs/2309.17453) 的摘要与表格。
@@ -65,7 +67,7 @@ DEEPSEEK_API_KEY=sk-... npm run start
 
 ### 本轮用户模拟
 
-已按首次用户路径分别试玩两篇论文：选择案件 → 阅读摘要 → 故意选错一次 → 根据右侧论文卷宗纠正 → 提交 COMMIT → 创建 BRANCH → MERGE → 5/5 结案。过程中把“下一步该看什么”改成自动聚焦证物卡，并在选案页增加论文类型、年份、作者、摘要和 arXiv 原文链接；移动端也验证了选案与 6 张证物卡没有横向溢出。
+已按首次用户路径分别试玩两篇论文：选择案件 → 阅读摘要 → 故意选错一次 → 根据右侧论文卷宗纠正 → 提交 COMMIT → 创建 BRANCH → MERGE → 5/5 结案。过程中把“下一步该看什么”改成自动聚焦证物卡，并在选案页增加论文类型、年份、作者、摘要和 arXiv 原文链接；移动端也验证了选案与 4 张论文证物卡没有横向溢出。
 
 ## 逆转裁判素材参考
 

@@ -36,6 +36,6 @@ export async function importArxiv(url: string) {
   return post<{ paper: ImportedPaper }>('/api/paper/import', { url })
 }
 
-export async function generateStory(paper: ImportedPaper) {
-  return post<{ story: GeneratedStory }>('/api/paper/generate', { paper })
+export async function generateStory(paper: ImportedPaper, apiKey: string) {
+  return post<{ story: GeneratedStory }>('/api/paper/generate', { paper, apiKey })
 }

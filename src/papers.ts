@@ -9,6 +9,16 @@ export type PaperScenes = {
   verdict?: string
 }
 
+export type PaperEvidence = {
+  label: string
+  subtitle: string
+  title: string
+  description: string
+  value: string
+  source: string
+  glyph?: string
+}
+
 export type PaperCase = {
   id: PaperId
   label: string
@@ -29,6 +39,7 @@ export type PaperCase = {
   sourceMode?: 'curated' | 'arxiv-deepseek'
   keyIdeas?: string[]
   scenes?: PaperScenes
+  evidence?: PaperEvidence[]
 }
 
 export const PAPERS: Record<Exclude<PaperId, 'custom'>, PaperCase> = {
@@ -49,6 +60,11 @@ export const PAPERS: Record<Exclude<PaperId, 'custom'>, PaperCase> = {
     correctFeedback: '指证成功：Transformer 的关键不是“更大的记忆”，而是让每个位置直接关注其它位置。',
     sourceUrl: 'https://arxiv.org/abs/1706.03762',
     sourceLabel: 'arXiv · 1706.03762',
+    evidence: [
+      { label: 'RESULT', subtitle: 'WMT14 EN→DE', title: '28.4 BLEU：超过既有最佳结果 2+ 分', description: 'Transformer big 在 WMT 2014 英德翻译上达到 28.4 BLEU，超过包括 ensemble 在内的既有最佳结果 2 分以上。', value: '28.4 BLEU · +2 以上', source: '论文摘要 / Table 2', glyph: '↗' },
+      { label: 'RESULT', subtitle: 'WMT14 EN→FR', title: '41.8 BLEU：单模型 SOTA', description: '在 WMT 2014 英法任务上，单个 Transformer big 达到 41.8 BLEU；论文报告训练耗时约 3.5 天。', value: '41.8 BLEU · 3.5 days', source: '论文摘要 / Table 2–3', glyph: 'Σ' },
+      { label: 'DESIGN', subtitle: 'MODEL CONFIG', title: '6 层、8 头、dₘₒdₑₗ=512', description: 'Base Transformer 使用 6 层 encoder 与 6 层 decoder、8 个 attention heads，模型维度 d_model=512。', value: '6 + 6 layers · 8 heads', source: 'Section 3 / Table 3', glyph: '#' },
+    ],
   },
   streaming: {
     id: 'streaming',
@@ -67,5 +83,10 @@ export const PAPERS: Record<Exclude<PaperId, 'custom'>, PaperCase> = {
     correctFeedback: '指证成功：StreamingLLM 把“最初的锚点”和“最近的窗口”一起留下，让流式上下文保持稳定。',
     sourceUrl: 'https://arxiv.org/abs/2309.17453',
     sourceLabel: 'arXiv · 2309.17453',
+    evidence: [
+      { label: 'RESULT', subtitle: 'STREAM LENGTH', title: '最长可稳定处理 4M tokens', description: 'StreamingLLM 将初始 attention sink 与最近窗口一起保留，使流式语言模型可以处理长达约 4M tokens 的连续输入。', value: '4M tokens', source: '论文摘要', glyph: '↗' },
+      { label: 'RESULT', subtitle: 'THROUGHPUT', title: '相比重算快 22.2×', description: '论文报告 StreamingLLM 相比每次重新计算完整上下文可获得 22.2× 的速度提升，同时避免超出缓存后的性能崩溃。', value: '22.2× speedup', source: '论文摘要', glyph: 'Σ' },
+      { label: 'METHOD', subtitle: 'NO FINETUNING', title: '只保留初始 sink + 最近窗口', description: '方法不要求重新训练：保留最初几个 token 的 KV 作为 attention sink，再保留滑动窗口内最近 token 的 KV。', value: 'sink + window · no FT', source: 'Section 3 / Method', glyph: '#' },
+    ],
   },
 }

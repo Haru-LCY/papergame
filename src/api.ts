@@ -21,6 +21,7 @@ export type GeneratedStory = {
   correctOption: string
   correctFeedback: string
   keyIdeas: string[]
+  evidence: Array<{ label: string; subtitle: string; title: string; description: string; value: string; source: string; glyph?: string }>
   scenes: { opening?: string; testimony?: string; commit?: string; branch?: string; merge?: string; verdict?: string }
 }
 

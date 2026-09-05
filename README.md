@@ -57,6 +57,12 @@ DEEPSEEK_API_KEY=sk-... npm run start
 
 两条案件都共享同一条 AgentGit 教学链：先把论文和协作上下文放入 `repo`，再用 `commit` 封存证据、用 `branch` 并行调查，最后用 `merge` 把经过审查的结论带回主线。论文材料位于 [src/papers.ts](./src/papers.ts)，因此后续可以继续添加其它论文而不改动庭审组件。
 
+### 交叉询问与精确证物
+
+论文案件现在有一条更接近逆转裁判的交叉询问规则：玩家先按 `OBJECTION!` 指出证言矛盾，再从 `P1 / P2 / P3` 中提交一张具体论文证物，最后才能选择答案；只背概念、不提交数据会被异议打回。内置案件的证物直接引用论文中的可核对事实，例如 Transformer 的 `28.4 BLEU`、`41.8 BLEU / 3.5 days`，以及 StreamingLLM 的 `4M tokens`、`22.2× speedup`。这些数值对应 [Attention Is All You Need](https://arxiv.org/abs/1706.03762) 和 [Efficient Streaming Language Models with Attention Sinks](https://arxiv.org/abs/2309.17453) 的摘要与表格。
+
+动态生成的案件也必须返回三张带有 `value` 和 `source` 的证据卡；如果论文没有报告具体数字，会明确显示“未在摘要中报告”，不会让模型凭空补数字。
+
 ### 本轮用户模拟
 
 已按首次用户路径分别试玩两篇论文：选择案件 → 阅读摘要 → 故意选错一次 → 根据右侧论文卷宗纠正 → 提交 COMMIT → 创建 BRANCH → MERGE → 5/5 结案。过程中把“下一步该看什么”改成自动聚焦证物卡，并在选案页增加论文类型、年份、作者、摘要和 arXiv 原文链接；移动端也验证了选案与 6 张证物卡没有横向溢出。

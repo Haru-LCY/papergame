@@ -180,6 +180,39 @@ a { color: inherit; text-decoration: none; }
   .report-metrics { grid-template-columns: 1fr; }
 }
 
+.objection-flash {
+  animation: objection-image-slam 1.1s cubic-bezier(.16, .8, .24, 1) both;
+  background: transparent;
+  clip-path: none;
+  height: auto;
+  left: 50%;
+  max-width: none;
+  overflow: visible;
+  pointer-events: none;
+  position: fixed;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(70vw, 30rem);
+  z-index: 100;
+}
+.objection-flash::before { display: none; }
+.objection-flash > img {
+  display: block;
+  filter: drop-shadow(0 0.7rem 1rem rgba(0, 0, 0, 0.58));
+  height: auto;
+  width: 100%;
+}
+@keyframes objection-image-slam {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(2.25) rotate(-7deg); }
+  12% { opacity: 1; transform: translate(-50%, -50%) scale(0.92) rotate(2deg); }
+  20% { transform: translate(-50%, -50%) scale(1.08) rotate(-1deg); }
+  28%, 76% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+}
+@media (max-width: 40rem) {
+  .objection-flash { height: auto; left: 50%; max-width: none; top: 48%; width: min(82vw, 22rem); }
+}
+
 /* Visual polish: stronger hierarchy and a complete evidence-board system. */
 :focus-visible { outline: 2px solid var(--cyan, #8bd3d1); outline-offset: 3px; }
 .button, .choice, .paper-picker-card, .evidence-card, .claim-card, .note-evidence { border-radius: 3px; }

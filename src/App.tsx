@@ -121,7 +121,14 @@ export function App() {
   const reset = () => { setScreen('title'); setPaperId('attention'); setCustomPaper(null); setTurn(0); setScore(0); setActiveEvidenceId('paper-summary'); setFeedback(''); setObjection(''); setWrongAttempts(0); setPaperEvidencePresented(false); setObjectionRaised(false); setTransitioning(false); setMainLedger(null); setSelectedBranch(null); setMerged(false); setGuideOpen(true) }
   const selectPaper = (id: PaperId) => { if (id !== 'custom') setCustomPaper(null); setPaperId(id); setActiveEvidenceId('paper-summary'); setFeedback(''); setPaperEvidencePresented(false); setObjectionRaised(false); setMainLedger(null); setSelectedBranch(null); setMerged(false) }
   const focusEvidence = (stage: StageId) => { if (stage === 'paper') setActiveEvidenceId((current) => allEvidence.some((item) => item.id === current) ? current : allEvidence[0].id) }
-  const raiseObjection = (message: string, stage: StageId = 'paper') => { focusEvidence(stage); setObjection(message); window.setTimeout(() => setObjection(''), 980) }
+  const raiseObjection = (message: string, stage: StageId = 'paper') => {
+    focusEvidence(stage)
+    const voice = new Audio(assetUrl('objection.mp3'))
+    voice.volume = 0.95
+    void voice.play().catch(() => undefined)
+    setObjection(message)
+    window.setTimeout(() => setObjection(''), 1100)
+  }
   const raisePaperObjection = (message: string) => { setObjectionRaised(true); raiseObjection(message); const result = allEvidence.find((item) => item.id.startsWith('paper-evidence-')); if (result) setActiveEvidenceId(result.id) }
   const advance = (stage: StageId, message: string) => {
     if (transitioning) return
@@ -197,7 +204,7 @@ export function App() {
     <div className="game game--trial">
       <Masthead onHome={reset} status="IN SESSION" live />
       {guideOpen ? <OnboardingGuide onDismiss={() => setGuideOpen(false)} /> : null}
-      {objection ? <div className="objection-flash" role="alert" aria-live="assertive"><div className="objection-speed-lines" /><div className="objection-bubble"><img src={assetUrl('main.png')} alt="異議あり！" /></div><div className="objection-note">{objection}</div><div className="objection-portrait"><img src={assetUrl('defense.png')} alt="" /></div></div> : null}
+      {objection ? <div className="objection-flash" role="alert" aria-live="assertive"><img src={assetUrl('main.png')} alt="異議あり！" /></div> : null}
       <main className="court-layout">
         <div className="court-topline">
           <div><p className="overline">CASE 001 / {activePaper.label}</p><h1>{String(turn + 1).padStart(2, '0')} <span>{chapter}</span></h1></div>

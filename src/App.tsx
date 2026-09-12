@@ -197,7 +197,7 @@ export function App() {
     <div className="game game--trial">
       <Masthead onHome={reset} status="IN SESSION" live />
       {guideOpen ? <OnboardingGuide onDismiss={() => setGuideOpen(false)} /> : null}
-      {objection ? <div className="objection-flash" role="alert" aria-live="assertive"><div className="objection-speed-lines" /><div className="objection-bubble"><strong>OBJECTION!</strong><span>異議あり！</span></div><div className="objection-note">{objection}</div><div className="objection-portrait"><img src={assetUrl('defense.png')} alt="" /></div></div> : null}
+      {objection ? <div className="objection-flash" role="alert" aria-live="assertive"><div className="objection-speed-lines" /><div className="objection-bubble"><img src={assetUrl('main.png')} alt="異議あり！" /></div><div className="objection-note">{objection}</div><div className="objection-portrait"><img src={assetUrl('defense.png')} alt="" /></div></div> : null}
       <main className="court-layout">
         <div className="court-topline">
           <div><p className="overline">CASE 001 / {activePaper.label}</p><h1>{String(turn + 1).padStart(2, '0')} <span>{chapter}</span></h1></div>

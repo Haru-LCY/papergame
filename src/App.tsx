@@ -45,6 +45,7 @@ const COURT_STEPS = [
 const CHAPTERS = ['建立卷宗', '交叉询问', '调查假设', '合议结论', '宣读判决']
 const TOTAL_TURNS = CHAPTERS.length
 const MAX_SCORE = 4
+const assetUrl = (name: string) => `${import.meta.env.BASE_URL}assets/${name}`
 const TURN_GUIDES = [
   { label: '当前目标 · 01', title: '先读案情', detail: '阅读证词后，点击“打开论文卷宗”。' },
   { label: '当前目标 · 02', title: '提出异议，提交证物', detail: '先按 OBJECTION!，再点右侧 P1 / P2 / P3，最后选择反驳。' },
@@ -196,7 +197,7 @@ export function App() {
     <div className="game game--trial">
       <Masthead onHome={reset} status="IN SESSION" live />
       {guideOpen ? <OnboardingGuide onDismiss={() => setGuideOpen(false)} /> : null}
-      {objection ? <div className="objection-flash" role="alert" aria-live="assertive"><div className="objection-speed-lines" /><div className="objection-bubble"><strong>OBJECTION!</strong><span>異議あり！</span></div><div className="objection-note">{objection}</div><div className="objection-portrait"><img src="/assets/defense.png" alt="" /></div></div> : null}
+      {objection ? <div className="objection-flash" role="alert" aria-live="assertive"><div className="objection-speed-lines" /><div className="objection-bubble"><strong>OBJECTION!</strong><span>異議あり！</span></div><div className="objection-note">{objection}</div><div className="objection-portrait"><img src={assetUrl('defense.png')} alt="" /></div></div> : null}
       <main className="court-layout">
         <div className="court-topline">
           <div><p className="overline">CASE 001 / {activePaper.label}</p><h1>{String(turn + 1).padStart(2, '0')} <span>{chapter}</span></h1></div>
@@ -205,7 +206,7 @@ export function App() {
         <div className="objective-bar"><span>{TURN_GUIDES[turn].label}</span><strong>{TURN_GUIDES[turn].title}</strong><small>{TURN_GUIDES[turn].detail}</small></div>
         <div className="court-grid">
           <section className="courtroom">
-            <div className="scene-stage"><div className="stage-grid" /><div className="scene-sign">SUPREME<br /><b>PAPER COURT</b></div><Avatar kind="judge" label="JUDGE" text="J" image="/assets/judge.png" /><Avatar kind="defense" label="DEFENSE" text="YOU" image="/assets/defense.png" /><Avatar kind="prosecutor" label="PROSECUTOR" text="!" image="/assets/prosecutor.png" /><div className="bench" /></div>
+            <div className="scene-stage" style={{ backgroundImage: `url(${assetUrl('courtroom.png')})` }}><div className="stage-grid" /><div className="scene-sign">SUPREME<br /><b>PAPER COURT</b></div><Avatar kind="judge" label="JUDGE" text="J" image={assetUrl('judge.png')} /><Avatar kind="defense" label="DEFENSE" text="YOU" image={assetUrl('defense.png')} /><Avatar kind="prosecutor" label="PROSECUTOR" text="!" image={assetUrl('prosecutor.png')} /><div className="bench" /></div>
             <div className="dialogue-box">
               <Turn turn={turn} paper={activePaper} mainLedger={mainLedger} selectedBranch={selectedBranch} onAdvance={advance} onChoosePaper={choosePaper} onChooseHypothesis={chooseHypothesis} onSynthesize={synthesizeConclusion} onObjection={() => raisePaperObjection('证言与论文结果冲突。选择一件具体证物来反驳。')} onFinish={() => setScreen('verdict')} />
               {feedback ? <p className="feedback" role="status">{feedback}</p> : null}

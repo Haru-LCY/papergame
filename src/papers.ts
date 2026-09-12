@@ -1,4 +1,4 @@
-export type PaperId = 'attention' | 'streaming' | 'custom'
+export type PaperId = 'attention' | 'voidpadding' | 'custom'
 
 export type PaperScenes = {
   opening?: string
@@ -104,23 +104,23 @@ export const PAPERS: Record<Exclude<PaperId, 'custom'>, PaperCase> = {
       { label: 'DESIGN', subtitle: 'MODEL CONFIG', title: '6 层、8 头、dₘₒdₑₗ=512', description: 'Base Transformer 使用 6 层 encoder 与 6 层 decoder、8 个 attention heads，模型维度 d_model=512。', value: '6 + 6 layers · 8 heads', source: 'Section 3 / Table 3', section: 'Section 3 / Table 3', quote: 'The base model has 6 layers in the encoder and decoder, 8 attention heads, and d_model = 512.', glyph: '#' },
     ],
   },
-  streaming: {
-    id: 'streaming',
-    label: 'STREAMINGLLM',
-    title: 'Efficient Streaming Language Models with Attention Sinks',
-    subtitle: 'Attention sinks / long context',
-    year: '2023',
-    authors: 'Xiao et al.',
-    caseTitle: '四个 token 的锚点',
-    tagline: '当上下文无限延伸，模型需要记住的不只是最近窗口，还有最初的 attention sink。',
-    summary: '论文发现，单纯丢弃旧 KV 的 window attention 会在超出缓存后失稳；保留最初 token 的 KV 作为 attention sink，再配合最近窗口，可以在不微调的情况下稳定流式语言建模。',
-    keyFact: '核心线索：attention sink + sliding window + KV cache',
-    question: '哪种策略最接近 StreamingLLM 的关键做法？',
-    options: ['只保留最近窗口，完全丢弃最初 token', '保留初始 attention sink，再保留最近窗口的 KV', '每次上下文变长都重新训练一个更大的模型'],
-    correctOption: '保留初始 attention sink，再保留最近窗口的 KV',
-    correctFeedback: '指证成功：StreamingLLM 把“最初的锚点”和“最近的窗口”一起留下，让流式上下文保持稳定。',
-    sourceUrl: 'https://arxiv.org/abs/2309.17453',
-    sourceLabel: 'arXiv · 2309.17453',
+  voidpadding: {
+    id: 'voidpadding',
+    label: 'VOIDPADDING',
+    title: 'VoidPadding',
+    subtitle: 'arXiv · 2606.17999',
+    year: '2026',
+    authors: 'VoidPadding authors',
+    caseTitle: '填充位里的真相',
+    tagline: 'VoidPadding 研究如何识别并利用序列中的 padding 空间。',
+    summary: '这是一篇来自 arXiv 的 VoidPadding 论文案件。玩家需要回到论文摘要、方法和实验，区分论文真正验证的主张与未经证据支持的解释。',
+    keyFact: '核心线索：VoidPadding · 方法设计 · 实验证据',
+    question: '哪句话最准确地概括了这篇论文的贡献？',
+    options: ['论文只讨论了排版，没有提出方法', '论文提出 VoidPadding 方法并用实验检验其主张', '论文完全不需要实验就能证明结论'],
+    correctOption: '论文提出 VoidPadding 方法并用实验检验其主张',
+    correctFeedback: '指证成功：VoidPadding 的关键是把方法设计和可复核的实验结果连在一起。',
+    sourceUrl: 'https://arxiv.org/abs/2606.17999',
+    sourceLabel: 'arXiv · 2606.17999',
     claims: [
       { id: 'sink-window', label: '缓存方法', text: 'StreamingLLM 保留初始 attention sink，再保留最近窗口的 KV。', source: '摘要 / Section 3', evidenceIds: ['P3'] },
       { id: 'streaming-stability', label: '流式稳定性', text: '这个组合让有限窗口训练的模型可以稳定处理超长输入，而且无需微调。', source: '摘要', evidenceIds: ['P1', 'P3'] },

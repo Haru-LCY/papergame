@@ -31,6 +31,7 @@ type LedgerEntry = {
 const ACCOUNT_STORAGE = 'paper2.accounts'
 const SESSION_STORAGE = 'paper2.session'
 const HISTORY_STORAGE = 'paper2.history'
+const CUSTOM_PAPER_STORAGE = 'paper2.customPaper'
 
 type Account = { username: string; password: string }
 type HistoryEntry = { username: string; title: string; score: number; wrongAttempts: number; at: string }
@@ -109,6 +110,8 @@ export function App() {
   const activePaper = customPaper ?? (paperId === 'custom' ? PAPERS.attention : PAPERS[paperId])
   const allEvidence = useMemo(() => [paperEvidence(activePaper), ...paperEvidenceItems(activePaper)], [activePaper])
   const activeEvidence = useMemo(() => allEvidence.find((item) => item.id === activeEvidenceId) ?? allEvidence[0], [activeEvidenceId, allEvidence])
+
+  useEffect(() => { if (username) { const saved = readStorage<PaperCase | null>(`${CUSTOM_PAPER_STORAGE}.${username}`, null); if (saved) setCustomPaper(saved) } }, [username])
 
   useEffect(() => { if (screen === 'verdict' && username) { const history = readStorage<HistoryEntry[]>(HISTORY_STORAGE, []); const entry = { username, title: activePaper.title, score, wrongAttempts, at: new Date().toISOString() }; window.localStorage.setItem(HISTORY_STORAGE, JSON.stringify([entry, ...history.filter((item) => !(item.username === username && item.title === entry.title && item.at === entry.at))].slice(0, 30))) } }, [screen])
 
@@ -190,9 +193,9 @@ export function App() {
     setActiveEvidenceId(item.id)
   }
 
-  if (screen === 'title') return <Title username={username} onLogin={setUsername} onOpenAuth={() => { setAuthReturn('title'); setScreen('auth') }} onStart={() => setScreen('briefing')} />
+  if (screen === 'title') return <Title username={username} onLogin={setUsername} onOpenAuth={() => { setAuthReturn('title'); setScreen('auth') }} onStart={() => { const saved = username ? readStorage<PaperCase | null>(`${CUSTOM_PAPER_STORAGE}.${username}`, null) : null; if (saved) setCustomPaper(saved); setScreen('briefing') }} />
   if (screen === 'auth') return <AuthScreen username={username} onLogin={(value) => { setUsername(value); setScreen(authReturn) }} onBack={() => setScreen(authReturn)} />
-  if (screen === 'briefing') return <Briefing paper={activePaper} paperId={paperId} customPaper={customPaper} onSelectPaper={selectPaper} onImportPaper={(paper) => { setCustomPaper(paper); setPaperId('custom'); setActiveEvidenceId('paper-summary'); setFeedback(''); setPaperEvidencePresented(false); setObjectionRaised(false); setMainLedger(null); setSelectedBranch(null); setMerged(false) }} onBack={reset} onEnter={() => { setScreen('trial'); setTurn(0); setGuideOpen(true) }} />
+  if (screen === 'briefing') return <Briefing paper={activePaper} paperId={paperId} customPaper={customPaper} onSelectPaper={selectPaper} onImportPaper={(paper) => { setCustomPaper(paper); if (username) localStorage.setItem(`${CUSTOM_PAPER_STORAGE}.${username}`, JSON.stringify(paper)); setPaperId('custom'); setActiveEvidenceId('paper-summary'); setFeedback(''); setPaperEvidencePresented(false); setObjectionRaised(false); setMainLedger(null); setSelectedBranch(null); setMerged(false) }} onBack={reset} onEnter={() => { setScreen('trial'); setTurn(0); setGuideOpen(true) }} />
   if (screen === 'verdict') return <Verdict score={score} wrongAttempts={wrongAttempts} paper={activePaper} mainLedger={mainLedger} selectedBranch={selectedBranch} merged={merged} onRestart={reset} />
 
   const chapter = CHAPTERS[Math.min(turn, CHAPTERS.length - 1)]

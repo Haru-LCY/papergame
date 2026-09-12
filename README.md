@@ -54,7 +54,7 @@ DEEPSEEK_API_KEY=sk-... npm run start
 
 首页提供轻量注册、登录和本机游玩历史记录。账号数据只保存在当前浏览器的 localStorage，适合试玩身份标记，不是生产级账户系统；若要跨设备同步、密码哈希和真正的管理员权限，需要把 API 与数据库部署到服务端。
 
-DeepSeek key 现在只由服务端读取 `DEEPSEEK_API_KEY`（或项目外的 `key.md`），浏览器不会再提交或保存 key。GitHub Pages 是静态托管，不能安全运行这个代理；要开放自定义论文功能，请把 `server.mjs` 部署到 Render、Railway、Fly.io 等服务，并将前端 API 地址配置为你的服务域名。
+DeepSeek key 现在只由服务端读取 `DEEPSEEK_API_KEY`（或项目外的 `key.md`），浏览器不会再保存 key。服务端还提供受 `ADMIN_PASSWORD` 保护的 `/api/admin/key` 管理接口，可由管理员通过 HTTPS 写入运行时 key；生产环境建议直接使用 Render/Railway/Fly 的 Secret 管理，避免重启后丢失。GitHub Pages 是静态托管，不能安全运行这个代理；要开放自定义论文功能，请部署 `server.mjs`，并用 `VITE_API_BASE_URL` 将前端指向服务域名。
 
 ## 真实论文案件
 

@@ -273,9 +273,17 @@ function sendJson(res, status, body) {
 export function createPaperApiMiddleware() {
   return async (req, res, next) => {
     const path = (req.url || '').split('?')[0]
-    if (!path.startsWith('/api/paper/')) return next()
+    if (!path.startsWith('/api/paper/') && path !== '/api/admin/key') return next()
     if (req.method !== 'POST') return sendJson(res, 405, { error: '只支持 POST 请求。' })
     try {
+      if (path === '/api/admin/key') {
+        const body = await readJson(req, 4_000)
+        const adminPassword = process.env.ADMIN_PASSWORD
+        if (!adminPassword || typeof body?.password !== 'string' || body.password !== adminPassword) throw Object.assign(new Error('管理员认证失败。'), { statusCode: 401 })
+        if (typeof body.apiKey !== 'string' || !/^sk-[A-Za-z0-9_-]{16,}$/.test(body.apiKey.trim())) throw Object.assign(new Error('DeepSeek API key 格式不正确。'), { statusCode: 400 })
+        process.env.DEEPSEEK_API_KEY = body.apiKey.trim()
+        return sendJson(res, 200, { ok: true, message: 'API key 已由服务端接管。' })
+      }
       if (path === '/api/paper/import') {
         const body = await readJson(req, MAX_IMPORT_BYTES)
         return sendJson(res, 200, { paper: await importArxivPaper(body?.url) })

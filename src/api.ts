@@ -41,3 +41,7 @@ export async function importArxiv(url: string) {
 export async function generateStory(paper: ImportedPaper) {
   return post<{ story: GeneratedStory }>('/api/paper/generate', { paper })
 }
+
+export async function setServerApiKey(password: string, apiKey: string) {
+  return post<{ ok: true; message: string }>('/api/admin/key', { password, apiKey })
+}

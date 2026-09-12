@@ -27,4 +27,4 @@ const server = createServer((req, res) => {
   }).catch((error) => { res.statusCode = 500; res.end(error?.message || 'Server error') })
 })
 const port = Number(process.env.PORT || 4173)
-server.listen(port, '127.0.0.1', () => console.log(`Paper2 Ace Attorney running at http://127.0.0.1:${port}`))
+server.listen(port, '0.0.0.0', () => console.log(`Paper2 Ace Attorney running on port ${port}`))

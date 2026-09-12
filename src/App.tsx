@@ -196,7 +196,7 @@ export function App() {
   const chapter = CHAPTERS[Math.min(turn, CHAPTERS.length - 1)]
   return (
     <div className="game game--trial">
-      <Masthead onHome={reset} status="IN SESSION" live />
+      <Masthead onHome={reset} status="IN SESSION" live account={<AccountPanel username={username} onLogin={setUsername} />} />
       {guideOpen ? <OnboardingGuide onDismiss={() => setGuideOpen(false)} /> : null}
       <main className="court-layout">
         <div className="court-topline">
@@ -226,8 +226,8 @@ export function App() {
   )
 }
 
-function Masthead({ onHome, status, live = false }: { onHome: () => void; status: string; live?: boolean }) {
-  return <header className="masthead"><button className="wordmark" onClick={onHome}><span className="brand-mark">P2</span> PAPER2 / TRAINING COURT</button><span className="masthead-status">{live ? <span className="status-dot status-dot--live" /> : null}{status}</span></header>
+function Masthead({ onHome, status, live = false, account }: { onHome: () => void; status: string; live?: boolean; account?: ReactNode }) {
+  return <header className="masthead"><button className="wordmark" onClick={onHome}><span className="brand-mark">P2</span> PAPER2 / TRAINING COURT</button><div className="masthead-right">{account}<span className="masthead-status">{live ? <span className="status-dot status-dot--live" /> : null}{status}</span></div></header>
 }
 
 function Avatar({ kind, label, text, image }: { kind: string; label: string; text: string; image: string }) {
@@ -239,7 +239,7 @@ function OnboardingGuide({ onDismiss }: { onDismiss: () => void }) {
 }
 
 function Title({ username, onLogin, onStart }: { username: string; onLogin: (value: string) => void; onStart: () => void }) {
-  return <div className="game game--title"><Masthead onHome={() => undefined} status="CASE 001 / PLAYABLE" /><main className="title-layout"><section className="title-copy"><p className="overline">AN INTERACTIVE CASE FILE · 01</p><h1>Paper2<br /><em>逆转裁判</em></h1><p className="title-lede">把一篇真实论文变成可追问的证据链。<br />在一场 5 分钟的法庭推理里，学会读懂论文。</p><div className="title-meta"><span><b>案件</b> 真实论文</span><span><b>形式</b> 互动教程</span><span><b>难度</b> 新手友好</span></div><AccountPanel username={username} onLogin={onLogin} /><button className="button button--primary button--large" onClick={onStart}>选择论文案件 <span>↗</span></button><p className="title-note">DeepSeek key 由服务端管理员托管 · 内置案件无需登录即可试玩</p></section><TitleArt /></main><div className="title-footer"><span>PLAYABLE EXPLAINER</span><span>SCROLL / CLICK / LEARN</span><span>证据驱动的论文课堂</span></div></div>
+  return <div className="game game--title"><Masthead onHome={() => undefined} status="CASE 001 / PLAYABLE" account={<AccountPanel username={username} onLogin={onLogin} />} /><main className="title-layout"><section className="title-copy"><p className="overline">AN INTERACTIVE CASE FILE · 01</p><h1>Paper2<br /><em>逆转裁判</em></h1><p className="title-lede">把一篇真实论文变成可追问的证据链。<br />在一场 5 分钟的法庭推理里，学会读懂论文。</p><div className="title-meta"><span><b>案件</b> 真实论文</span><span><b>形式</b> 互动教程</span><span><b>难度</b> 新手友好</span></div><button className="button button--primary button--large" onClick={onStart}>选择论文案件 <span>↗</span></button><p className="title-note">DeepSeek key 由服务端管理员托管 · 内置案件无需登录即可试玩</p></section><TitleArt /></main><div className="title-footer"><span>PLAYABLE EXPLAINER</span><span>SCROLL / CLICK / LEARN</span><span>证据驱动的论文课堂</span></div></div>
 }
 
 function AccountPanel({ username, onLogin }: { username: string; onLogin: (value: string) => void }) {

@@ -2,6 +2,10 @@
 
 一个仿 Paper2Gal 的独立互动教学样例：玩家扮演辩护人，在“消失的上下文”案件中，通过交叉询问、提交论文证物和整理学习笔记，真正理解论文的主张、方法与实验。
 
+在线试玩：[https://haru-lcy.github.io/papergame/](https://haru-lcy.github.io/papergame/)
+
+GitHub Pages 版本包含两个无需 API key 的内置案件。公开构建不会收集、嵌入或发送 API key；自定义 arXiv 案件生成仍需运行下面的 Node 服务，或另行部署保存 `DEEPSEEK_API_KEY` 的服务端代理。
+
 ## 运行
 
 需要 Node.js 18+：

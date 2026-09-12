@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from
 import { generateStory, importArxiv, type GeneratedStory, type ImportedPaper } from './api'
 import { PAPERS, type PaperBranch, type PaperCase, type PaperClaim, type PaperEvidence, type PaperId } from './papers'
 
-type Screen = 'title' | 'briefing' | 'trial' | 'verdict'
+type Screen = 'title' | 'auth' | 'briefing' | 'trial' | 'verdict'
 type StageId = 'paper' | 'hypothesis' | 'synthesis'
 
 type Evidence = {
@@ -89,6 +89,7 @@ function makeGeneratedPaper(imported: ImportedPaper, story: GeneratedStory): Pap
 
 export function App() {
   const [screen, setScreen] = useState<Screen>('title')
+  const [authReturn, setAuthReturn] = useState<Screen>('title')
   const [username, setUsername] = useState(() => { try { return window.localStorage.getItem(SESSION_STORAGE) ?? '' } catch { return '' } })
   const [paperId, setPaperId] = useState<PaperId>('attention')
   const [customPaper, setCustomPaper] = useState<PaperCase | null>(null)
@@ -189,14 +190,15 @@ export function App() {
     setActiveEvidenceId(item.id)
   }
 
-  if (screen === 'title') return <Title username={username} onLogin={setUsername} onStart={() => setScreen('briefing')} />
+  if (screen === 'title') return <Title username={username} onLogin={setUsername} onOpenAuth={() => { setAuthReturn('title'); setScreen('auth') }} onStart={() => setScreen('briefing')} />
+  if (screen === 'auth') return <AuthScreen username={username} onLogin={(value) => { setUsername(value); setScreen(authReturn) }} onBack={() => setScreen(authReturn)} />
   if (screen === 'briefing') return <Briefing paper={activePaper} paperId={paperId} customPaper={customPaper} onSelectPaper={selectPaper} onImportPaper={(paper) => { setCustomPaper(paper); setPaperId('custom'); setActiveEvidenceId('paper-summary'); setFeedback(''); setPaperEvidencePresented(false); setObjectionRaised(false); setMainLedger(null); setSelectedBranch(null); setMerged(false) }} onBack={reset} onEnter={() => { setScreen('trial'); setTurn(0); setGuideOpen(true) }} />
   if (screen === 'verdict') return <Verdict score={score} wrongAttempts={wrongAttempts} paper={activePaper} mainLedger={mainLedger} selectedBranch={selectedBranch} merged={merged} onRestart={reset} />
 
   const chapter = CHAPTERS[Math.min(turn, CHAPTERS.length - 1)]
   return (
     <div className="game game--trial">
-      <Masthead onHome={reset} status="IN SESSION" live account={<AccountPanel username={username} onLogin={setUsername} />} />
+      <Masthead onHome={reset} status="IN SESSION" live account={<AccountPanel username={username} onLogin={setUsername} onOpenAuth={() => { setAuthReturn('trial'); setScreen('auth') }} />} />
       {guideOpen ? <OnboardingGuide onDismiss={() => setGuideOpen(false)} /> : null}
       <main className="court-layout">
         <div className="court-topline">
@@ -238,15 +240,21 @@ function OnboardingGuide({ onDismiss }: { onDismiss: () => void }) {
   return <section className="onboarding-guide" role="dialog" aria-modal="true" aria-labelledby="guide-title"><button className="guide-close" type="button" onClick={onDismiss} aria-label="关闭游玩引导">×</button><p className="overline">HOW TO PLAY · 30 SECONDS</p><h2 id="guide-title">三步完成交叉询问</h2><div className="guide-steps"><article><b>01</b><span><strong>提出异议</strong><small>先按下 OBJECTION! 指出证词问题。</small></span></article><article><b>02</b><span><strong>提交证物</strong><small>从右侧选择 P1 / P2 / P3 的论文数据。</small></span></article><article><b>03</b><span><strong>作出判断</strong><small>选择被论文证据支持的解释。</small></span></article></div><p className="guide-note">庭审会自动记录你使用的证物，不再要求填写学习笔记。</p><button className="button button--primary" type="button" onClick={onDismiss}>明白，开始审理 <span>→</span></button></section>
 }
 
-function Title({ username, onLogin, onStart }: { username: string; onLogin: (value: string) => void; onStart: () => void }) {
-  return <div className="game game--title"><Masthead onHome={() => undefined} status="CASE 001 / PLAYABLE" account={<AccountPanel username={username} onLogin={onLogin} />} /><main className="title-layout"><section className="title-copy"><p className="overline">AN INTERACTIVE CASE FILE · 01</p><h1>Paper2<br /><em>逆转裁判</em></h1><p className="title-lede">把一篇真实论文变成可追问的证据链。<br />在一场 5 分钟的法庭推理里，学会读懂论文。</p><div className="title-meta"><span><b>案件</b> 真实论文</span><span><b>形式</b> 互动教程</span><span><b>难度</b> 新手友好</span></div><button className="button button--primary button--large" onClick={onStart}>选择论文案件 <span>↗</span></button><p className="title-note">DeepSeek key 由服务端管理员托管 · 内置案件无需登录即可试玩</p></section><TitleArt /></main><div className="title-footer"><span>PLAYABLE EXPLAINER</span><span>SCROLL / CLICK / LEARN</span><span>证据驱动的论文课堂</span></div></div>
+function Title({ username, onLogin, onOpenAuth, onStart }: { username: string; onLogin: (value: string) => void; onOpenAuth: () => void; onStart: () => void }) {
+  return <div className="game game--title"><Masthead onHome={() => undefined} status="CASE 001 / PLAYABLE" account={<AccountPanel username={username} onLogin={onLogin} onOpenAuth={onOpenAuth} />} /><main className="title-layout"><section className="title-copy"><p className="overline">AN INTERACTIVE CASE FILE · 01</p><h1>Paper2<br /><em>逆转裁判</em></h1><p className="title-lede">把一篇真实论文变成可追问的证据链。<br />在一场 5 分钟的法庭推理里，学会读懂论文。</p><div className="title-meta"><span><b>案件</b> 真实论文</span><span><b>形式</b> 互动教程</span><span><b>难度</b> 新手友好</span></div><button className="button button--primary button--large" onClick={onStart}>选择论文案件 <span>↗</span></button><p className="title-note">DeepSeek key 由服务端管理员托管 · 内置案件无需登录即可试玩</p></section><TitleArt /></main><div className="title-footer"><span>PLAYABLE EXPLAINER</span><span>SCROLL / CLICK / LEARN</span><span>证据驱动的论文课堂</span></div></div>
 }
 
-function AccountPanel({ username, onLogin }: { username: string; onLogin: (value: string) => void }) {
+function AccountPanel({ username, onLogin, onOpenAuth }: { username: string; onLogin: (value: string) => void; onOpenAuth?: () => void }) {
   const [name, setName] = useState(username); const [password, setPassword] = useState(''); const [message, setMessage] = useState('')
   const submit = (register: boolean) => { const accounts = readStorage<Account[]>(ACCOUNT_STORAGE, []); if (!/^[\w-]{3,20}$/.test(name) || password.length < 4) return setMessage('用户名至少 3 位，密码至少 4 位。'); if (register && accounts.some((item) => item.username === name)) return setMessage('用户名已存在。'); if (register) localStorage.setItem(ACCOUNT_STORAGE, JSON.stringify([...accounts, { username: name, password }])); else if (!accounts.some((item) => item.username === name && item.password === password)) return setMessage('用户名或密码不正确。'); localStorage.setItem(SESSION_STORAGE, name); onLogin(name); setPassword(''); setMessage(register ? '注册成功，历史记录会保存到此账号。' : '登录成功。') }
   if (username) { const history = readStorage<HistoryEntry[]>(HISTORY_STORAGE, []).filter((item) => item.username === username); return <div className="account-panel"><div><b>玩家 · {username}</b><small>{history.length} 场历史记录</small></div><button className="button button--ghost" onClick={() => { localStorage.removeItem(SESSION_STORAGE); onLogin('') }}>退出</button>{history.length ? <details><summary>查看游玩历史</summary>{history.slice(0, 5).map((item) => <p key={item.at}>{item.title} · {item.score}/4 · {new Date(item.at).toLocaleDateString()}</p>)}</details> : null}</div> }
-  return <div className="account-panel"><div className="account-fields"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="用户名" /><input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="密码" type="password" /></div><div><button className="button button--ghost" onClick={() => submit(false)}>登录</button><button className="button button--ghost" onClick={() => submit(true)}>注册</button></div>{message ? <small>{message}</small> : null}</div>
+  return <button className="account-trigger" onClick={onOpenAuth}>登录 / 注册 <span>↗</span></button>
+}
+
+function AuthScreen({ username, onLogin, onBack }: { username: string; onLogin: (value: string) => void; onBack: () => void }) {
+  const [name, setName] = useState(username); const [password, setPassword] = useState(''); const [register, setRegister] = useState(false); const [message, setMessage] = useState('')
+  const submit = () => { const accounts = readStorage<Account[]>(ACCOUNT_STORAGE, []); if (!/^[\w-]{3,20}$/.test(name) || password.length < 4) return setMessage('用户名至少 3 位，密码至少 4 位。'); if (register && accounts.some((item) => item.username === name)) return setMessage('用户名已存在。'); if (register) localStorage.setItem(ACCOUNT_STORAGE, JSON.stringify([...accounts, { username: name, password }])); else if (!accounts.some((item) => item.username === name && item.password === password)) return setMessage('用户名或密码不正确。'); localStorage.setItem(SESSION_STORAGE, name); onLogin(name) }
+  return <div className="game game--auth"><Masthead onHome={onBack} status="ACCOUNT / SECURE" /><main className="auth-layout"><section className="auth-card"><p className="overline">PAPER2 ACCOUNT</p><h1>{register ? '注册玩家' : '欢迎回来'}</h1><p className="auth-lede">登录后可以保存你的庭审历史，继续追踪每一次证据推理。</p><label>用户名<input value={name} onChange={(e) => setName(e.target.value)} autoComplete="username" /></label><label>密码<input value={password} onChange={(e) => setPassword(e.target.value)} type="password" autoComplete={register ? 'new-password' : 'current-password'} /></label>{message ? <p className="auth-message">{message}</p> : null}<button className="button button--primary button--large" onClick={submit}>{register ? '创建账号' : '登录账号'} <span>→</span></button><button className="auth-switch" onClick={() => { setRegister(!register); setMessage('') }}>{register ? '已有账号？返回登录' : '还没有账号？立即注册'}</button><button className="auth-back" onClick={onBack}>← 返回案件首页</button></section><section className="auth-art"><span>CLAIM</span><b>→</b><span>EVIDENCE</span><b>→</b><span>HISTORY</span></section></main></div>
 }
 
 function TitleArt() {

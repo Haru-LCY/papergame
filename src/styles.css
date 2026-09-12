@@ -15,10 +15,23 @@ a { color: inherit; text-decoration: none; }
 .game--verdict { background: radial-gradient(circle at 80% 18%, rgba(139, 211, 209, 0.18), transparent 28%), var(--bg); }
 .masthead { align-items: center; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; margin: 0 auto; max-width: 86rem; min-height: 4.25rem; padding: 0 clamp(1.25rem, 5vw, 5rem); position: relative; z-index: 2; }
 .masthead-right { align-items: center; display: flex; gap: 1rem; }
+.account-trigger { background: transparent; border: 1px solid var(--line); color: var(--cream); font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.05em; padding: 0.55rem 0.7rem; }
+.account-trigger:hover { border-color: var(--orange); color: var(--orange); }
 .masthead .account-panel { align-items: center; display: flex; gap: 0.45rem; margin: 0; max-width: min(31rem, 48vw); padding: 0.35rem; }
 .masthead .account-panel .account-fields { display: flex; }
 .masthead .account-panel details { border: 0; padding: 0; }
 .masthead .account-panel details summary { cursor: pointer; }
+.auth-layout { align-items: center; display: grid; gap: 8vw; grid-template-columns: minmax(18rem, 28rem) minmax(16rem, 24rem); justify-content: center; min-height: calc(100dvh - 4.25rem); padding: 3rem clamp(1.25rem, 5vw, 5rem); }
+.auth-card { background: rgba(18, 26, 37, 0.9); border: 1px solid var(--line); box-shadow: 0 1.5rem 5rem rgba(0,0,0,.24); display: grid; gap: 0.75rem; padding: clamp(1.4rem, 4vw, 2.4rem); }
+.auth-card h1 { font-family: 'Noto Serif SC', serif; font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 500; margin: 0; }
+.auth-lede { color: var(--muted); font-size: .8rem; line-height: 1.6; margin: 0 0 .6rem; }
+.auth-card label { color: var(--muted); display: grid; font-family: 'DM Mono', monospace; font-size: .62rem; gap: .35rem; }
+.auth-card label input { background: #080e16; border: 1px solid var(--line); color: var(--cream); padding: .75rem; }
+.auth-message { color: var(--yellow); font-size: .7rem; margin: 0; }
+.auth-switch, .auth-back { background: none; color: var(--cyan); font-family: 'DM Mono', monospace; font-size: .62rem; padding: .35rem; text-align: left; }
+.auth-switch:hover, .auth-back:hover { color: var(--cream); }
+.auth-art { align-items: center; border-block: 1px solid var(--line); color: var(--muted); display: flex; flex-wrap: wrap; font-family: 'DM Mono', monospace; font-size: .7rem; gap: .8rem; letter-spacing: .12em; line-height: 2; padding: 1.5rem 0; }
+.auth-art b { color: var(--orange); }
 .wordmark, .masthead-status, .title-footer, .ticker { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.13em; text-transform: uppercase; }
 .wordmark { align-items: center; background: none; color: var(--muted); display: flex; gap: 0.65rem; padding: 0; }
 .wordmark:hover { color: var(--cream); }
@@ -186,6 +199,8 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 40rem) { .objection-flash { width: min(82%, 22rem); }.objection-row { align-items: flex-start; flex-direction: column; }.key-input-row { flex-direction: column; }.key-clear { min-height: 2.25rem; } }
 
 @media (max-width: 40rem) {
+  .auth-layout { grid-template-columns: 1fr; min-height: auto; padding-top: 5rem; }
+  .auth-art { justify-content: center; }
   .masthead-right { gap: 0.45rem; }
   .masthead .masthead-status { display: none; }
   .masthead .account-panel { max-width: 58vw; }

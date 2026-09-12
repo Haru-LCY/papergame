@@ -33,7 +33,7 @@ npm run start
 3. 使用 DeepSeek JSON Output 生成摘要、关键线索、三项选择题、正确答案和五段庭审对白；
 4. 把生成的案件临时放进当前页面，和两篇内置案件一样可以完整游玩。
 
-内置的两篇真实论文案件无需配置 key，打开页面即可试玩。只有导入自定义 arXiv 论文并生成剧情时，才需要在标题页配置玩家自己的 DeepSeek key。它只保存在当前浏览器的 localStorage，并在生成案件时通过本地服务端请求发送给 DeepSeek；不会进入前端 bundle、接口响应或 Git。开发机仍可以把单独的 `key.md` 放在项目外（本项目默认检查 `../key.md`，作为服务端回退），也支持 `DEEPSEEK_API_KEY` / `DEEPSEEK_KEY_FILE`：
+内置的两篇真实论文案件无需配置 key，打开页面即可试玩。导入自定义 arXiv 论文时，服务端会读取项目外的 `key.md`（本机开发时默认检查 `../key.md` 和 `/Users/chunyu/Desktop/agit/key.md`），不会把 key 放进前端 bundle、接口响应或 Git；生产部署建议改用平台 Secret。
 
 ```bash
 DEEPSEEK_API_KEY=sk-... npm run start
@@ -55,6 +55,8 @@ DEEPSEEK_API_KEY=sk-... npm run start
 首页提供轻量注册、登录和本机游玩历史记录。账号数据只保存在当前浏览器的 localStorage，适合试玩身份标记，不是生产级账户系统；若要跨设备同步、密码哈希和真正的管理员权限，需要把 API 与数据库部署到服务端。
 
 DeepSeek key 现在只由服务端读取 `DEEPSEEK_API_KEY`（或项目外的 `key.md`），浏览器不会再保存 key。服务端还提供受 `ADMIN_PASSWORD` 保护的 `/api/admin/key` 管理接口，可由管理员通过 HTTPS 写入运行时 key；生产环境建议直接使用 Render/Railway/Fly 的 Secret 管理，避免重启后丢失。GitHub Pages 是静态托管，不能安全运行这个代理；要开放自定义论文功能，请部署 `server.mjs`，并用 `VITE_API_BASE_URL` 将前端指向服务域名。
+
+部署后端时设置 `FRONTEND_ORIGIN=https://haru-lcy.github.io`，这样 GitHub Pages 才能跨域调用 `/api/paper/import` 和 `/api/paper/generate`。本机运行则直接执行 `npm run start`，服务会自动读取项目外的 `key.md`。
 
 ## 真实论文案件
 

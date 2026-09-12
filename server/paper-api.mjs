@@ -274,6 +274,11 @@ export function createPaperApiMiddleware() {
   return async (req, res, next) => {
     const path = (req.url || '').split('?')[0]
     if (!path.startsWith('/api/paper/') && path !== '/api/admin/key') return next()
+    const allowedOrigin = process.env.FRONTEND_ORIGIN || '*'
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin)
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+    if (req.method === 'OPTIONS') { res.statusCode = 204; return res.end() }
     if (req.method !== 'POST') return sendJson(res, 405, { error: '只支持 POST 请求。' })
     try {
       if (path === '/api/admin/key') {

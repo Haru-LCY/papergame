@@ -28,7 +28,7 @@ export type GeneratedStory = {
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  const response = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? ''}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
   const payload = await response.json().catch(() => ({}))
   if (!response.ok) throw new Error(typeof payload?.error === 'string' ? payload.error : `请求失败（${response.status}）`)
   return payload as T
@@ -38,6 +38,6 @@ export async function importArxiv(url: string) {
   return post<{ paper: ImportedPaper }>('/api/paper/import', { url })
 }
 
-export async function generateStory(paper: ImportedPaper, apiKey: string) {
-  return post<{ story: GeneratedStory }>('/api/paper/generate', { paper, apiKey })
+export async function generateStory(paper: ImportedPaper) {
+  return post<{ story: GeneratedStory }>('/api/paper/generate', { paper })
 }

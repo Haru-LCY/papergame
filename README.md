@@ -52,6 +52,10 @@ DEEPSEEK_API_KEY=sk-... npm run start
 
 本样例使用 React + TypeScript + Vite，内置案件是确定性的本地数据，同时通过一个 Node API 路由连接 arXiv 和 DeepSeek 生成新案件。API 代码位于 [server/paper-api.mjs](./server/paper-api.mjs)，前端请求封装位于 [src/api.ts](./src/api.ts)。
 
+首页提供轻量注册、登录和本机游玩历史记录。账号数据只保存在当前浏览器的 localStorage，适合试玩身份标记，不是生产级账户系统；若要跨设备同步、密码哈希和真正的管理员权限，需要把 API 与数据库部署到服务端。
+
+DeepSeek key 现在只由服务端读取 `DEEPSEEK_API_KEY`（或项目外的 `key.md`），浏览器不会再提交或保存 key。GitHub Pages 是静态托管，不能安全运行这个代理；要开放自定义论文功能，请把 `server.mjs` 部署到 Render、Railway、Fly.io 等服务，并将前端 API 地址配置为你的服务域名。
+
 ## 真实论文案件
 
 进入游戏后可以选择两篇真实论文，论文摘要会成为庭审中的第一件证物：

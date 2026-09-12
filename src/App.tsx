@@ -28,11 +28,14 @@ type LedgerEntry = {
   message: string
 }
 
-const API_KEY_STORAGE = 'paper2.deepseekApiKey'
+const ACCOUNT_STORAGE = 'paper2.accounts'
+const SESSION_STORAGE = 'paper2.session'
+const HISTORY_STORAGE = 'paper2.history'
 
-function loadApiKey() {
-  try { return window.localStorage.getItem(API_KEY_STORAGE) ?? '' } catch { return '' }
-}
+type Account = { username: string; password: string }
+type HistoryEntry = { username: string; title: string; score: number; wrongAttempts: number; at: string }
+
+function readStorage<T>(key: string, fallback: T): T { try { return JSON.parse(window.localStorage.getItem(key) || '') as T } catch { return fallback } }
 
 const COURT_STEPS = [
   { id: 'paper', number: '01', label: '阅读卷宗', subtitle: '确认论文主张', glyph: 'P' },
@@ -86,7 +89,7 @@ function makeGeneratedPaper(imported: ImportedPaper, story: GeneratedStory): Pap
 
 export function App() {
   const [screen, setScreen] = useState<Screen>('title')
-  const [apiKey, setApiKey] = useState(loadApiKey)
+  const [username, setUsername] = useState(() => { try { return window.localStorage.getItem(SESSION_STORAGE) ?? '' } catch { return '' } })
   const [paperId, setPaperId] = useState<PaperId>('attention')
   const [customPaper, setCustomPaper] = useState<PaperCase | null>(null)
   const [turn, setTurn] = useState(0)
@@ -106,26 +109,17 @@ export function App() {
   const allEvidence = useMemo(() => [paperEvidence(activePaper), ...paperEvidenceItems(activePaper)], [activePaper])
   const activeEvidence = useMemo(() => allEvidence.find((item) => item.id === activeEvidenceId) ?? allEvidence[0], [activeEvidenceId, allEvidence])
 
+  useEffect(() => { if (screen === 'verdict' && username) { const history = readStorage<HistoryEntry[]>(HISTORY_STORAGE, []); const entry = { username, title: activePaper.title, score, wrongAttempts, at: new Date().toISOString() }; window.localStorage.setItem(HISTORY_STORAGE, JSON.stringify([entry, ...history.filter((item) => !(item.username === username && item.title === entry.title && item.at === entry.at))].slice(0, 30))) } }, [screen])
+
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [screen, turn])
-
-  const updateApiKey = (value: string) => {
-    setApiKey(value)
-    try {
-      if (value.trim()) window.localStorage.setItem(API_KEY_STORAGE, value.trim())
-      else window.localStorage.removeItem(API_KEY_STORAGE)
-    } catch { /* localStorage can be disabled; the in-memory key still works for this session */ }
-  }
 
   const reset = () => { setScreen('title'); setPaperId('attention'); setCustomPaper(null); setTurn(0); setScore(0); setActiveEvidenceId('paper-summary'); setFeedback(''); setObjection(''); setWrongAttempts(0); setPaperEvidencePresented(false); setObjectionRaised(false); setTransitioning(false); setMainLedger(null); setSelectedBranch(null); setMerged(false); setGuideOpen(true) }
   const selectPaper = (id: PaperId) => { if (id !== 'custom') setCustomPaper(null); setPaperId(id); setActiveEvidenceId('paper-summary'); setFeedback(''); setPaperEvidencePresented(false); setObjectionRaised(false); setMainLedger(null); setSelectedBranch(null); setMerged(false) }
   const focusEvidence = (stage: StageId) => { if (stage === 'paper') setActiveEvidenceId((current) => allEvidence.some((item) => item.id === current) ? current : allEvidence[0].id) }
   const raiseObjection = (message: string, stage: StageId = 'paper') => {
     focusEvidence(stage)
-    const voice = new Audio(assetUrl('objection.mp3'))
-    voice.volume = 0.95
-    void voice.play().catch(() => undefined)
     setObjection(message)
     window.setTimeout(() => setObjection(''), 1100)
   }
@@ -195,8 +189,8 @@ export function App() {
     setActiveEvidenceId(item.id)
   }
 
-  if (screen === 'title') return <Title apiKey={apiKey} onApiKeyChange={updateApiKey} onStart={() => setScreen('briefing')} />
-  if (screen === 'briefing') return <Briefing paper={activePaper} paperId={paperId} customPaper={customPaper} apiKey={apiKey} onSelectPaper={selectPaper} onImportPaper={(paper) => { setCustomPaper(paper); setPaperId('custom'); setActiveEvidenceId('paper-summary'); setFeedback(''); setPaperEvidencePresented(false); setObjectionRaised(false); setMainLedger(null); setSelectedBranch(null); setMerged(false) }} onBack={reset} onEnter={() => { setScreen('trial'); setTurn(0); setGuideOpen(true) }} />
+  if (screen === 'title') return <Title username={username} onLogin={setUsername} onStart={() => setScreen('briefing')} />
+  if (screen === 'briefing') return <Briefing paper={activePaper} paperId={paperId} customPaper={customPaper} onSelectPaper={selectPaper} onImportPaper={(paper) => { setCustomPaper(paper); setPaperId('custom'); setActiveEvidenceId('paper-summary'); setFeedback(''); setPaperEvidencePresented(false); setObjectionRaised(false); setMainLedger(null); setSelectedBranch(null); setMerged(false) }} onBack={reset} onEnter={() => { setScreen('trial'); setTurn(0); setGuideOpen(true) }} />
   if (screen === 'verdict') return <Verdict score={score} wrongAttempts={wrongAttempts} paper={activePaper} mainLedger={mainLedger} selectedBranch={selectedBranch} merged={merged} onRestart={reset} />
 
   const chapter = CHAPTERS[Math.min(turn, CHAPTERS.length - 1)]
@@ -204,7 +198,6 @@ export function App() {
     <div className="game game--trial">
       <Masthead onHome={reset} status="IN SESSION" live />
       {guideOpen ? <OnboardingGuide onDismiss={() => setGuideOpen(false)} /> : null}
-      {objection ? <div className="objection-flash" role="alert" aria-live="assertive"><img src={assetUrl('main.png')} alt="異議あり！" /></div> : null}
       <main className="court-layout">
         <div className="court-topline">
           <div><p className="overline">CASE 001 / {activePaper.label}</p><h1>{String(turn + 1).padStart(2, '0')} <span>{chapter}</span></h1></div>
@@ -213,7 +206,7 @@ export function App() {
         <div className="objective-bar"><span>{TURN_GUIDES[turn].label}</span><strong>{TURN_GUIDES[turn].title}</strong><small>{TURN_GUIDES[turn].detail}</small></div>
         <div className="court-grid">
           <section className="courtroom">
-            <div className="scene-stage" style={{ backgroundImage: `url(${assetUrl('courtroom.png')})` }}><div className="stage-grid" /><div className="scene-sign">SUPREME<br /><b>PAPER COURT</b></div><Avatar kind="judge" label="JUDGE" text="J" image={assetUrl('judge.png')} /><Avatar kind="defense" label="DEFENSE" text="YOU" image={assetUrl('defense.png')} /><Avatar kind="prosecutor" label="PROSECUTOR" text="!" image={assetUrl('prosecutor.png')} /><div className="bench" /></div>
+            <div className="scene-stage" style={{ backgroundImage: `url(${assetUrl('courtroom.png')})` }}><div className="stage-grid" /><div className="scene-sign">SUPREME<br /><b>PAPER COURT</b></div><Avatar kind="judge" label="JUDGE" text="J" image={assetUrl('judge.png')} /><Avatar kind="defense" label="DEFENSE" text="YOU" image={assetUrl('defense.png')} /><Avatar kind="prosecutor" label="PROSECUTOR" text="!" image={assetUrl('prosecutor.png')} /><div className="bench" />{objection ? <div className="objection-flash" role="alert" aria-label="異議あり"><img src={assetUrl('main.png')} alt="異議あり！" /></div> : null}</div>
             <div className="dialogue-box">
               <Turn turn={turn} paper={activePaper} mainLedger={mainLedger} selectedBranch={selectedBranch} onAdvance={advance} onChoosePaper={choosePaper} onChooseHypothesis={chooseHypothesis} onSynthesize={synthesizeConclusion} onObjection={() => raisePaperObjection('证言与论文结果冲突。选择一件具体证物来反驳。')} onFinish={() => setScreen('verdict')} />
               {feedback ? <p className="feedback" role="status">{feedback}</p> : null}
@@ -245,31 +238,33 @@ function OnboardingGuide({ onDismiss }: { onDismiss: () => void }) {
   return <section className="onboarding-guide" role="dialog" aria-modal="true" aria-labelledby="guide-title"><button className="guide-close" type="button" onClick={onDismiss} aria-label="关闭游玩引导">×</button><p className="overline">HOW TO PLAY · 30 SECONDS</p><h2 id="guide-title">三步完成交叉询问</h2><div className="guide-steps"><article><b>01</b><span><strong>提出异议</strong><small>先按下 OBJECTION! 指出证词问题。</small></span></article><article><b>02</b><span><strong>提交证物</strong><small>从右侧选择 P1 / P2 / P3 的论文数据。</small></span></article><article><b>03</b><span><strong>作出判断</strong><small>选择被论文证据支持的解释。</small></span></article></div><p className="guide-note">庭审会自动记录你使用的证物，不再要求填写学习笔记。</p><button className="button button--primary" type="button" onClick={onDismiss}>明白，开始审理 <span>→</span></button></section>
 }
 
-function Title({ apiKey, onApiKeyChange, onStart }: { apiKey: string; onApiKeyChange: (value: string) => void; onStart: () => void }) {
-  const keyReady = /^sk-[A-Za-z0-9_-]{16,}$/.test(apiKey.trim())
-  return <div className="game game--title"><Masthead onHome={() => undefined} status="CASE 001 / PLAYABLE" /><main className="title-layout"><section className="title-copy"><p className="overline">AN INTERACTIVE CASE FILE · 01</p><h1>Paper2<br /><em>逆转裁判</em></h1><p className="title-lede">把一篇真实论文变成可追问的证据链。<br />在一场 5 分钟的法庭推理里，学会读懂论文。</p><div className="title-meta"><span><b>案件</b> 真实论文</span><span><b>形式</b> 互动教程</span><span><b>难度</b> 新手友好</span></div><div className="key-gate"><div className="key-gate-head"><span>DEEPSEEK API KEY · OPTIONAL</span><b className={keyReady ? 'key-state key-state--ready' : 'key-state'}>{keyReady ? 'READY' : 'OPTIONAL'}</b></div><label className="key-label" htmlFor="deepseek-key">导入自定义 arXiv 案件时需要 key；内置案件可直接试玩</label><div className="key-input-row"><input id="deepseek-key" className="key-input" type="password" value={apiKey} onChange={(event) => onApiKeyChange(event.target.value)} placeholder="sk-..." autoComplete="off" spellCheck={false} /><button className="key-clear" type="button" onClick={() => onApiKeyChange('')} disabled={!apiKey}>清除</button></div><p className="key-help">只保存在此浏览器的本地存储中；仅用于向本地服务端请求 DeepSeek，不会显示在案件页面。</p></div><button className="button button--primary button--large" onClick={onStart}>选择论文案件 <span>↗</span></button><p className="title-note">内置案件无需 key · 不上传本地文件 · 现在就能进入法庭</p></section><TitleArt /></main><div className="title-footer"><span>PLAYABLE EXPLAINER</span><span>SCROLL / CLICK / LEARN</span><span>证据驱动的论文课堂</span></div></div>
+function Title({ username, onLogin, onStart }: { username: string; onLogin: (value: string) => void; onStart: () => void }) {
+  return <div className="game game--title"><Masthead onHome={() => undefined} status="CASE 001 / PLAYABLE" /><main className="title-layout"><section className="title-copy"><p className="overline">AN INTERACTIVE CASE FILE · 01</p><h1>Paper2<br /><em>逆转裁判</em></h1><p className="title-lede">把一篇真实论文变成可追问的证据链。<br />在一场 5 分钟的法庭推理里，学会读懂论文。</p><div className="title-meta"><span><b>案件</b> 真实论文</span><span><b>形式</b> 互动教程</span><span><b>难度</b> 新手友好</span></div><AccountPanel username={username} onLogin={onLogin} /><button className="button button--primary button--large" onClick={onStart}>选择论文案件 <span>↗</span></button><p className="title-note">DeepSeek key 由服务端管理员托管 · 内置案件无需登录即可试玩</p></section><TitleArt /></main><div className="title-footer"><span>PLAYABLE EXPLAINER</span><span>SCROLL / CLICK / LEARN</span><span>证据驱动的论文课堂</span></div></div>
+}
+
+function AccountPanel({ username, onLogin }: { username: string; onLogin: (value: string) => void }) {
+  const [name, setName] = useState(username); const [password, setPassword] = useState(''); const [message, setMessage] = useState('')
+  const submit = (register: boolean) => { const accounts = readStorage<Account[]>(ACCOUNT_STORAGE, []); if (!/^[\w-]{3,20}$/.test(name) || password.length < 4) return setMessage('用户名至少 3 位，密码至少 4 位。'); if (register && accounts.some((item) => item.username === name)) return setMessage('用户名已存在。'); if (register) localStorage.setItem(ACCOUNT_STORAGE, JSON.stringify([...accounts, { username: name, password }])); else if (!accounts.some((item) => item.username === name && item.password === password)) return setMessage('用户名或密码不正确。'); localStorage.setItem(SESSION_STORAGE, name); onLogin(name); setPassword(''); setMessage(register ? '注册成功，历史记录会保存到此账号。' : '登录成功。') }
+  if (username) { const history = readStorage<HistoryEntry[]>(HISTORY_STORAGE, []).filter((item) => item.username === username); return <div className="account-panel"><div><b>玩家 · {username}</b><small>{history.length} 场历史记录</small></div><button className="button button--ghost" onClick={() => { localStorage.removeItem(SESSION_STORAGE); onLogin('') }}>退出</button>{history.length ? <details><summary>查看游玩历史</summary>{history.slice(0, 5).map((item) => <p key={item.at}>{item.title} · {item.score}/4 · {new Date(item.at).toLocaleDateString()}</p>)}</details> : null}</div> }
+  return <div className="account-panel"><div className="account-fields"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="用户名" /><input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="密码" type="password" /></div><div><button className="button button--ghost" onClick={() => submit(false)}>登录</button><button className="button button--ghost" onClick={() => submit(true)}>注册</button></div>{message ? <small>{message}</small> : null}</div>
 }
 
 function TitleArt() {
   return <section className="title-art" aria-label="案件卷宗预览"><div className="paper-sheet paper-sheet--back" /><div className="paper-sheet paper-sheet--front"><div className="sheet-stamp">EVIDENCE</div><p className="sheet-kicker">CASE FILE / 001</p><p className="sheet-title">消失的<br /><strong>上下文</strong></p><div className="sheet-rule" /><div className="sheet-lines"><i /><i /><i /><i /></div><p className="sheet-footer">PAPER2 · 2026</p></div><div className="orbit orbit--one" /><div className="orbit orbit--two" /><span className="art-label art-label--top">THE PAPER IS<br /><b>THE EVIDENCE</b></span><span className="art-label art-label--bottom">CLAIM / EVIDENCE / REASONING<br /><b>HYPOTHESIS / SYNTHESIS</b></span></section>
 }
 
-function Briefing({ paper, paperId, customPaper, apiKey, onSelectPaper, onImportPaper, onBack, onEnter }: { paper: PaperCase; paperId: PaperId; customPaper: PaperCase | null; apiKey: string; onSelectPaper: (id: PaperId) => void; onImportPaper: (paper: PaperCase) => void; onBack: () => void; onEnter: () => void }) {
+function Briefing({ paper, paperId, customPaper, onSelectPaper, onImportPaper, onBack, onEnter }: { paper: PaperCase; paperId: PaperId; customPaper: PaperCase | null; onSelectPaper: (id: PaperId) => void; onImportPaper: (paper: PaperCase) => void; onBack: () => void; onEnter: () => void }) {
   const [url, setUrl] = useState('')
   const [importState, setImportState] = useState<'idle' | 'scanning' | 'generating'>('idle')
   const [importError, setImportError] = useState('')
   const submitImport = async () => {
     if (!url.trim() || importState !== 'idle') return
-    if (!/^sk-[A-Za-z0-9_-]{16,}$/.test(apiKey.trim())) {
-      setImportError('导入自定义 arXiv 案件需要 DeepSeek API key；你仍可以直接游玩内置案件。')
-      return
-    }
     setImportError('')
     try {
       setImportState('scanning')
       const { paper: imported } = await importArxiv(url.trim())
       setImportState('generating')
-      const { story } = await generateStory(imported, apiKey)
+      const { story } = await generateStory(imported)
       onImportPaper(makeGeneratedPaper(imported, story))
       setImportState('idle')
       setUrl('')

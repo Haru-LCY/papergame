@@ -283,8 +283,7 @@ export function createPaperApiMiddleware() {
       if (path === '/api/paper/generate') {
         const body = await readJson(req, MAX_GENERATE_BYTES)
         if (!body?.paper || typeof body.paper.title !== 'string') throw Object.assign(new Error('缺少论文内容。'), { statusCode: 400 })
-        if (typeof body.apiKey !== 'string' || !body.apiKey.trim()) throw Object.assign(new Error('请先配置 DeepSeek API key。'), { statusCode: 401 })
-        return sendJson(res, 200, { story: await generatePaperStory(body.paper, body.apiKey) })
+        return sendJson(res, 200, { story: await generatePaperStory(body.paper) })
       }
       return sendJson(res, 404, { error: '未知的论文 API 路由。' })
     } catch (error) {

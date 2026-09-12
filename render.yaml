@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: paper2-ace-attorney-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: FRONTEND_ORIGIN
+        value: https://haru-lcy.github.io
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
